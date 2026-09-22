@@ -24,16 +24,9 @@ export default async function AdminOrderDetailPage({ params }: Props) {
   
   const allImages = await db.select().from(productImages);
   
-  // ✅ Fixed: Handle null productId and colorId
-  const getItemImage = (productId: string | null, colorId: string | null): string | undefined => {
+  // ✅ Simplified: just get primary or first image for product
+  const getItemImage = (productId: string | null): string | undefined => {
     if (!productId) return undefined;
-    
-    if (colorId) {
-      const colorImage = allImages.find(
-        (img) => img.productId === productId && img.colorId === colorId
-      );
-      if (colorImage) return colorImage.url;
-    }
     
     const primaryImage = allImages.find(
       (img) => img.productId === productId && img.isPrimary
@@ -54,7 +47,11 @@ export default async function AdminOrderDetailPage({ params }: Props) {
     NEW: "bg-amber-50 text-amber-700 border-amber-200",
     CONFIRMED: "bg-blue-50 text-blue-700 border-blue-200",
     PROCESSING: "bg-indigo-50 text-indigo-700 border-indigo-200",
-    SHIPPED: "bg-purple-50 text-purple-700 border-purple-200",
+    CUSTOMIZATION_REVIEW: "bg-purple-50 text-purple-700 border-purple-200",
+    PRINTING: "bg-violet-50 text-violet-700 border-violet-200",
+    QUALITY_CHECK: "bg-cyan-50 text-cyan-700 border-cyan-200",
+    PACKED: "bg-teal-50 text-teal-700 border-teal-200",
+    SHIPPED: "bg-blue-50 text-blue-700 border-blue-200",
     DELIVERED: "bg-green-50 text-green-700 border-green-200",
     CANCELLED: "bg-red-50 text-red-700 border-red-200",
     REFUNDED: "bg-orange-50 text-orange-700 border-orange-200",
@@ -64,7 +61,11 @@ export default async function AdminOrderDetailPage({ params }: Props) {
     NEW: "bg-amber-500",
     CONFIRMED: "bg-blue-500",
     PROCESSING: "bg-indigo-500",
-    SHIPPED: "bg-purple-500",
+    CUSTOMIZATION_REVIEW: "bg-purple-500",
+    PRINTING: "bg-violet-500",
+    QUALITY_CHECK: "bg-cyan-500",
+    PACKED: "bg-teal-500",
+    SHIPPED: "bg-blue-600",
     DELIVERED: "bg-green-500",
     CANCELLED: "bg-red-500",
     REFUNDED: "bg-orange-500",
@@ -115,7 +116,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
               <h2 className="text-lg font-bold text-black mb-4">Order Items</h2>
               <div className="space-y-3">
                 {items.map((item) => {
-                  const imageUrl = getItemImage(item.productId, item.colorId);
+                  const imageUrl = getItemImage(item.productId);
                   
                   return (
                     <div 
@@ -154,6 +155,9 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                             </>
                           )}
                         </div>
+                        {item.fabricName && (
+                          <p className="text-xs text-gray-500 mt-1">{item.fabricName}</p>
+                        )}
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-bold text-black">{formatPrice(parseFloat(item.totalPrice))}</p>
@@ -181,6 +185,12 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                     <span className="font-medium text-green-600">-{formatPrice(parseFloat(order.discount))}</span>
                   </div>
                 )}
+                {parseFloat(order.tax) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Tax</span>
+                    <span className="font-medium text-black">{formatPrice(parseFloat(order.tax))}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-base font-bold pt-3 border-t border-black/5">
                   <span className="text-black">Total</span>
                   <span className="text-black">{formatPrice(parseFloat(order.total))}</span>
@@ -202,39 +212,43 @@ export default async function AdminOrderDetailPage({ params }: Props) {
             {/* Status History */}
             <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
               <h2 className="text-lg font-bold text-black mb-4">Status History</h2>
-              <div className="space-y-4">
-                {history.map((h, index) => (
-                  <div key={h.id} className="flex gap-4 relative">
-                    {index !== history.length - 1 && (
-                      <div className="absolute left-2 top-8 bottom-0 w-px bg-black/5" />
-                    )}
-                    <div className={`w-4 h-4 rounded-full mt-1 shrink-0 z-10 ${
-                      statusDotColors[h.status] ?? "bg-gray-400"
-                    }`} />
-                    <div className="flex-1 pb-4">
-                      <div className="flex items-center gap-3 mb-1">
-                        <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
-                          statusStyles[h.status] ?? "bg-gray-100 text-gray-600 border-gray-200"
-                        }`}>
-                          {h.status}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(h.createdAt).toLocaleString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          })}
-                        </span>
-                      </div>
-                      {h.note && (
-                        <p className="text-sm text-gray-600 mt-2">{h.note}</p>
+              {history.length > 0 ? (
+                <div className="space-y-4">
+                  {history.map((h, index) => (
+                    <div key={h.id} className="flex gap-4 relative">
+                      {index !== history.length - 1 && (
+                        <div className="absolute left-2 top-8 bottom-0 w-px bg-black/5" />
                       )}
+                      <div className={`w-4 h-4 rounded-full mt-1 shrink-0 z-10 ${
+                        statusDotColors[h.status] ?? "bg-gray-400"
+                      }`} />
+                      <div className="flex-1 pb-4">
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
+                            statusStyles[h.status] ?? "bg-gray-100 text-gray-600 border-gray-200"
+                          }`}>
+                            {h.status}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(h.createdAt).toLocaleString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </span>
+                        </div>
+                        {h.note && (
+                          <p className="text-sm text-gray-600 mt-2">{h.note}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 italic">No status updates yet</p>
+              )}
             </div>
           </div>
 
@@ -260,6 +274,27 @@ export default async function AdminOrderDetailPage({ params }: Props) {
               </div>
             </div>
 
+            {/* Company Details (if provided) */}
+            {(order.companyName || order.gstNumber) && (
+              <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+                <h2 className="text-sm font-bold text-black mb-4">Business Details</h2>
+                <div className="space-y-2">
+                  {order.companyName && (
+                    <div>
+                      <p className="text-xs text-gray-500">Company</p>
+                      <p className="text-sm text-gray-900">{order.companyName}</p>
+                    </div>
+                  )}
+                  {order.gstNumber && (
+                    <div>
+                      <p className="text-xs text-gray-500">GST Number</p>
+                      <p className="text-sm font-mono text-gray-900">{order.gstNumber}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Payment Details */}
             <div className="rounded-3xl border border-black/5 bg-white p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
               <h2 className="text-sm font-bold text-black mb-4">Payment</h2>
@@ -271,15 +306,23 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                       ? "bg-green-50 text-green-700 border-green-200"
                       : order.paymentStatus === "PENDING"
                       ? "bg-amber-50 text-amber-700 border-amber-200"
+                      : order.paymentStatus === "AUTHORIZED"
+                      ? "bg-blue-50 text-blue-700 border-blue-200"
                       : "bg-red-50 text-red-700 border-red-200"
                   }`}>
                     {order.paymentStatus}
                   </span>
                 </div>
+                {order.paymentGateway && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Payment Gateway</p>
+                    <p className="text-sm text-gray-900 capitalize">{order.paymentGateway}</p>
+                  </div>
+                )}
                 {order.paymentId && (
                   <div>
                     <p className="text-xs text-gray-500 mb-1">Transaction ID</p>
-                    <p className="text-xs font-mono text-gray-900 bg-gray-50 px-2 py-1 rounded border border-black/5">
+                    <p className="text-xs font-mono text-gray-900 bg-gray-50 px-2 py-1 rounded border border-black/5 break-all">
                       {order.paymentId}
                     </p>
                   </div>
