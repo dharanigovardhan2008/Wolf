@@ -38,8 +38,7 @@ export async function GET(
     const items = await db
       .select()
       .from(orderItems)
-      .where(eq(orderItems.orderId, order.id))
-      .orderBy(desc(orderItems.createdAt));
+      .where(eq(orderItems.orderId, order.id)); // removed order by createdAt
 
     // Fetch full details for each item
     const itemsWithDetails = await Promise.all(
@@ -61,7 +60,7 @@ export async function GET(
                 colorId: productVariants.colorId,
                 sizeId: productVariants.sizeId,
                 colorName: colors.name,
-                colorCode: colors.code,
+                colorCode: colors.hexCode, // fixed from code to hexCode
                 sizeName: sizes.name,
               })
               .from(productVariants)
@@ -90,14 +89,16 @@ export async function GET(
 
         const imageUrl = colorImage?.url || primaryImage?.url || anyImage?.url || null;
 
+        const customData = (item.customizationData as any) || {};
+
         return {
           id: item.id,
           quantity: item.quantity,
-          price: item.price,
-          subtotal: item.subtotal,
-          customizationText: item.customizationText,
-          customizationFont: item.customizationFont,
-          customizationColor: item.customizationColor,
+          price: item.unitPrice,
+          subtotal: item.totalPrice,
+          customizationText: customData.text || null,
+          customizationFont: customData.font || null,
+          customizationColor: customData.color || null,
           productName: productData?.name || "Unknown Product",
           productSlug: productData?.slug || null,
           colorName: variantData?.colorName || null,

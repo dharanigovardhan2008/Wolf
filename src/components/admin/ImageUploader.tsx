@@ -11,12 +11,14 @@ export function ImageUploader({
   onChange,
   max = 8,
   endpoint = "/api/admin/upload",
+  uploadPreset,
   colorOptions, // NEW: pass an array of { id, name, hexCode } to enable per-image color tagging
 }: {
   value: UploadedImage[];
   onChange: (images: UploadedImage[]) => void;
   max?: number;
   endpoint?: string;
+  uploadPreset?: string;
   colorOptions?: Array<{ id: string; name: string; hexCode: string }>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -35,6 +37,7 @@ export function ImageUploader({
       }
       const fd = new FormData();
       fd.append("file", file);
+      if (uploadPreset) fd.append("uploadPreset", uploadPreset);
       try {
         const res = await fetch(endpoint, { method: "POST", body: fd });
         const data = await res.json().catch(() => null);

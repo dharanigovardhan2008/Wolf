@@ -10,6 +10,7 @@ interface Props {
   fabrics: Array<{ id: string; name: string }>;
   colors: Array<{ id: string; name: string; hexCode: string }>;
   sizes: Array<{ id: string; name: string }>;
+  styles?: Array<{ id: string; name: string }>;
   product?: {
     id: string;
     name: string;
@@ -21,6 +22,7 @@ interface Props {
     basePrice: string;
     customizationPrice: string;
     fabricId: string | null;
+    styleCategoryId?: string | null;
     gsm: number | null;
     isCustomizable: boolean;
     isFeatured: boolean;
@@ -54,7 +56,7 @@ function buildInitialGrid(
   return grid;
 }
 
-export function AdminProductForm({ fabrics, colors, sizes, product }: Props) {
+export function AdminProductForm({ fabrics, colors, sizes, styles, product }: Props) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -86,6 +88,7 @@ export function AdminProductForm({ fabrics, colors, sizes, product }: Props) {
     basePrice: product?.basePrice ?? "599",
     customizationPrice: product?.customizationPrice ?? "149",
     fabricId: product?.fabricId ?? "",
+    styleCategoryId: product?.styleCategoryId ?? "",
     gsm: product?.gsm ?? 220,
     isCustomizable: product?.isCustomizable ?? true,
     isFeatured: product?.isFeatured ?? false,
@@ -195,6 +198,7 @@ export function AdminProductForm({ fabrics, colors, sizes, product }: Props) {
         basePrice: basePriceNum,
         customizationPrice: customizationPriceNum,
         fabricId: formData.fabricId || null,
+        styleCategoryId: formData.styleCategoryId || null,
         gsm: formData.gsm || null,
         actualPrice: null,
         seoTitle: null,
@@ -356,8 +360,8 @@ export function AdminProductForm({ fabrics, colors, sizes, product }: Props) {
 
       {/* Category & Type */}
       <div className={sectionClass}>
-        <h2 className={headingClass}>Category</h2>
-        <div className="grid sm:grid-cols-2 gap-4">
+        <h2 className={headingClass}>Category & Style</h2>
+        <div className="grid sm:grid-cols-3 gap-4">
           <div>
             <label className={labelClass}>Category</label>
             <select
@@ -379,6 +383,21 @@ export function AdminProductForm({ fabrics, colors, sizes, product }: Props) {
               placeholder="oversized, regular, polo..."
               className={inputClass}
             />
+          </div>
+          <div>
+            <label className={labelClass}>Style (Optional)</label>
+            <select
+              value={formData.styleCategoryId}
+              onChange={(e) => setFormData({ ...formData, styleCategoryId: e.target.value })}
+              className={inputClass}
+            >
+              <option value="">No Style</option>
+              {styles?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -438,7 +457,7 @@ export function AdminProductForm({ fabrics, colors, sizes, product }: Props) {
               type="number"
               value={formData.gsm || ""}
               onChange={(e) =>
-                setFormData({ ...formData, gsm: e.target.value ? parseInt(e.target.value, 10) : null })
+                setFormData({ ...formData, gsm: e.target.value ? parseInt(e.target.value, 10) : (null as any) })
               }
               placeholder="220"
               className={inputClass}
