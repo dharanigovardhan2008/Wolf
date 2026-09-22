@@ -27,8 +27,10 @@ model products {
   stock             Int                @default(0)
   category          String?
   image_url         String?
+  fabric_id         Int?
   created_at        DateTime           @default(now())
   updated_at        DateTime           @updatedAt
+  fabric            fabrics?           @relation(fields: [fabric_id], references: [id])
   order_items       order_items[]
   cart_items        cart_items[]
   product_variants  product_variants[]
@@ -49,6 +51,16 @@ model sizes {
   sort_order       Int                @default(0)
   created_at       DateTime           @default(now())
   product_variants product_variants[]
+}
+
+model fabrics {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String?
+  weight      String?
+  care        String?
+  created_at  DateTime   @default(now())
+  products    products[]
 }
 
 model product_variants {
