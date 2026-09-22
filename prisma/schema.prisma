@@ -7,3 +7,58 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model users {
+  id         Int       @id @default(autoincrement())
+  name       String
+  email      String    @unique
+  password   String
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  orders     orders[]
+  cart_items cart_items[]
+}
+
+model products {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  price       Decimal   @db.Decimal(10, 2)
+  stock       Int       @default(0)
+  category    String?
+  image_url   String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  order_items order_items[]
+  cart_items  cart_items[]
+}
+
+model orders {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  total       Decimal   @db.Decimal(10, 2)
+  status      String    @default("pending")
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  user        users     @relation(fields: [user_id], references: [id])
+  order_items order_items[]
+}
+
+model order_items {
+  id         Int      @id @default(autoincrement())
+  order_id   Int
+  product_id Int
+  quantity   Int
+  price      Decimal  @db.Decimal(10, 2)
+  order      orders   @relation(fields: [order_id], references: [id])
+  product    products @relation(fields: [product_id], references: [id])
+}
+
+model cart_items {
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  product_id Int
+  quantity   Int
+  created_at DateTime @default(now())
+  user       users    @relation(fields: [user_id], references: [id])
+  product    products @relation(fields: [product_id], references: [id])
+}
