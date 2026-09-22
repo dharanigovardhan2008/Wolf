@@ -1,0 +1,1 @@
+ALTER TABLE "style_categories" ADD COLUMN "background_color" text;
