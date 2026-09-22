@@ -8,39 +8,73 @@ datasource db {
 }
 
 model users {
-  id            Int       @id @default(autoincrement())
+  id            Int          @id @default(autoincrement())
   name          String
-  email         String    @unique
+  email         String       @unique
   password_hash String
-  role          String    @default("USER")
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+  role          String       @default("USER")
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
   orders        orders[]
   cart_items    cart_items[]
 }
 
 model products {
-  id          Int       @id @default(autoincrement())
-  name        String
-  description String?
-  price       Decimal   @db.Decimal(10, 2)
-  stock       Int       @default(0)
-  category    String?
-  image_url   String?
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-  order_items order_items[]
-  cart_items  cart_items[]
+  id                Int                @id @default(autoincrement())
+  name              String
+  description       String?
+  price             Decimal            @db.Decimal(10, 2)
+  stock             Int                @default(0)
+  category          String?
+  image_url         String?
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
+  order_items       order_items[]
+  cart_items        cart_items[]
+  product_variants  product_variants[]
+}
+
+model colors {
+  id               Int                @id @default(autoincrement())
+  name             String             @unique
+  hex_code         String
+  sort_order       Int                @default(0)
+  created_at       DateTime           @default(now())
+  product_variants product_variants[]
+}
+
+model sizes {
+  id               Int                @id @default(autoincrement())
+  name             String             @unique
+  sort_order       Int                @default(0)
+  created_at       DateTime           @default(now())
+  product_variants product_variants[]
+}
+
+model product_variants {
+  id         Int      @id @default(autoincrement())
+  product_id Int
+  color_id   Int
+  size_id    Int
+  sku        String   @unique
+  stock      Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  product    products @relation(fields: [product_id], references: [id])
+  color      colors   @relation(fields: [color_id], references: [id])
+  size       sizes    @relation(fields: [size_id], references: [id])
+
+  @@unique([product_id, color_id, size_id])
 }
 
 model orders {
-  id          Int       @id @default(autoincrement())
+  id          Int           @id @default(autoincrement())
   user_id     Int
-  total       Decimal   @db.Decimal(10, 2)
-  status      String    @default("pending")
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-  user        users     @relation(fields: [user_id], references: [id])
+  total       Decimal       @db.Decimal(10, 2)
+  status      String        @default("pending")
+  created_at  DateTime      @default(now())
+  updated_at  DateTime      @updatedAt
+  user        users         @relation(fields: [user_id], references: [id])
   order_items order_items[]
 }
 
