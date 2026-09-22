@@ -24,7 +24,10 @@ export default async function AdminOrderDetailPage({ params }: Props) {
   
   const allImages = await db.select().from(productImages);
   
-  const getItemImage = (productId: string, colorId: string | null) => {
+  // ✅ Fixed: Handle null productId and colorId
+  const getItemImage = (productId: string | null, colorId: string | null): string | undefined => {
+    if (!productId) return undefined;
+    
     if (colorId) {
       const colorImage = allImages.find(
         (img) => img.productId === productId && img.colorId === colorId
@@ -151,9 +154,6 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                             </>
                           )}
                         </div>
-                        {item.customText && (
-                          <p className="text-xs text-gray-600 mt-1 italic">"{item.customText}"</p>
-                        )}
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-bold text-black">{formatPrice(parseFloat(item.totalPrice))}</p>
@@ -267,7 +267,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Payment Status</p>
                   <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
-                    order.paymentStatus === "PAID" 
+                    order.paymentStatus === "CAPTURED" 
                       ? "bg-green-50 text-green-700 border-green-200"
                       : order.paymentStatus === "PENDING"
                       ? "bg-amber-50 text-amber-700 border-amber-200"
